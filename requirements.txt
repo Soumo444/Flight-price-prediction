@@ -1,0 +1,12 @@
+# Runtime and notebook dependencies used across this project.
+# Keep scikit-learn compatible with the version used to create the model pickle.
+ipython>=9.15
+joblib>=1.6
+matplotlib>=3.11
+numpy>=2.4
+pandas>=3.0
+scikit-learn>=1.9
+seaborn>=0.13
+streamlit>=1.64
+xgboost>=3.4
+ipykernel>=6.0

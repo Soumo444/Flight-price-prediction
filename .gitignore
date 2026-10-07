@@ -1,0 +1,8 @@
+# Local model artifact too large for regular Git hosting.
+/flight_price_rf_model.pkl
+
+# Python environments and generated files.
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
