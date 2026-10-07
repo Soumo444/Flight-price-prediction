@@ -28,11 +28,11 @@
 
 ## 📊 Training dataset
 
-The flight-price notebooks explore the `Clean_Dataset.csv` flight-fare data and engineer features for the prediction task. The final production-training cell uses the prepared **`Freshly_cleaned.csv`** dataset.
+The flight-price notebooks explore the **`data/Clean_Dataset.csv`** flight-fare data included in this repository. It contains **300,153 rows and 12 columns**, including airline, route, departure and arrival periods, class, duration, days remaining, and fare. The exploratory notebook looks for this file in the project `data/` folder, including when launched from the `EDA/` directory.
 
-The cleaned training file contains **300,257 rows** before exact duplicate feature/price rows are removed; the published model was refit on **299,995 rows** and **69 encoded features**. The data includes airline, origin and destination, fare, class, journey day and month, flight number, duration, stop category, and departure/arrival time information. Flight number is used to group validation and test splits to reduce leakage, then excluded as an identifier from model features.
+The included model was trained from the prepared **`Freshly_cleaned.csv`** dataset, which is not included here. That file contained **300,257 rows** before exact duplicate feature/price rows were removed; the published model was refit on **299,995 rows** and **69 encoded features**. The training notebook groups validation and test splits by flight number to reduce leakage, then excludes flight number as an identifier from model features.
 
-**The CSV files are not included in this repository.** You do not need the dataset to run the dashboard—the included model artifact is sufficient. To retrain, obtain the dataset from a source you are authorized to use and place `Freshly_cleaned.csv` in the project root or a `data/` folder. The notebook also contains exploratory cells that may need their input paths updated. Do not publish datasets unless you have permission to redistribute them.
+You do not need any CSV to run the dashboard—the included model artifact is sufficient. To run the exploratory notebook, use the included `data/Clean_Dataset.csv`. To reproduce training of the currently published model, supply the prepared `Freshly_cleaned.csv` in the project root or `data/` folder; the final training cell needs that prepared file. The notebook also contains exploratory cells that may need their input paths updated. Do not redistribute datasets outside this repository unless you have permission.
 
 ## 📈 Model evaluation
 
@@ -54,6 +54,8 @@ These results describe one evaluation split from this dataset; they do not guara
 ├── EDA/
 │   ├── EDA And Feature Engineering Flight Price Dataset.ipynb
 │   └── EDA.IPYNB                              # Separate red-wine exploration
+├── data/
+│   └── Clean_Dataset.csv                      # Included flight-fare dataset for EDA
 ├── final_flight_price_rf_model.pkl             # Included XGBoost artifact
 ├── requirements.txt
 └── README.md
@@ -97,14 +99,14 @@ The app checks the configured model path and supported repository-relative fallb
 
 ## 🧪 Train or explore
 
-Open the desired notebook in Jupyter or VS Code using the environment where the requirements are installed. For production retraining, supply `Freshly_cleaned.csv` in the project root or `data/` directory; update the notebook's candidate paths if the file is elsewhere. Some earlier exploratory cells may still refer to local paths or `Clean_Dataset.csv`.
+Open the desired notebook in Jupyter or VS Code using the environment where the requirements are installed. The included `data/Clean_Dataset.csv` is used by the notebook's initial exploratory section. For production retraining of the published model workflow, also supply `Freshly_cleaned.csv` in the project root or `data/` directory; some later exploratory cells may still refer to local paths.
 
 `EDA/EDA.IPYNB` is a separate red-wine EDA notebook and fetches its dataset from UCI, so that notebook requires internet access.
 
 ## 🚀 Deployment notes
 
 - The model artifact is loaded with joblib. Only use pickle/joblib files from trusted sources; loading an untrusted artifact can execute code.
-- Keep large datasets and model files out of Git unless repository policy explicitly permits them. Use an approved artifact store for files that exceed GitHub's size limit.
+- `data/Clean_Dataset.csv` is included for the project notebook. Keep other large datasets and model files out of Git unless repository policy explicitly permits them; use an approved artifact store for files that exceed GitHub's size limit.
 - Use compatible Python and XGBoost versions when loading the model. `requirements.txt` provides dependency constraints, not a fully locked environment.
 - The route animation uses external browser assets and needs internet access; fare prediction does not depend on those assets.
 - If you replace the model, verify that its feature count and schema match the app before deployment.
@@ -115,7 +117,8 @@ Open the desired notebook in Jupyter or VS Code using the environment where the 
 | --- | --- |
 | Model is disconnected | Confirm the model file is present, trusted, and `MODEL_PATH` points to it if using a non-default location. |
 | Model load or prediction error | Check Python/XGBoost compatibility and ensure the artifact matches the app's 69-feature schema. |
-| Training notebook cannot find data | Place `Freshly_cleaned.csv` in the project root or `data/`, or update the notebook's candidate paths. |
+| Exploratory notebook cannot find data | Confirm `data/Clean_Dataset.csv` exists in the project checkout; the notebook searches the project data folder from common working directories. |
+| Final training cell cannot find data | Provide `Freshly_cleaned.csv` in the project root or `data/`, or update the training cell's candidate paths. |
 | Wine notebook cannot fetch data | Check internet access to the UCI dataset. |
 | Route animation is blank | Check browser access to external visualization assets; the fare prediction is separate. |
 
