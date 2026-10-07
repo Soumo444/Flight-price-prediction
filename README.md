@@ -1,57 +1,71 @@
-# Flight Price Prediction Dashboard
+<div align="center">
 
-A Streamlit dashboard that estimates an Indian domestic flight fare from itinerary details using a pre-trained XGBoost model. The repository also contains notebooks for flight-price feature engineering and an independent red-wine exploratory data analysis.
+# ✈️ Flight Price Prediction
+
+### Explore an itinerary. Get a data-driven fare estimate.
 
 [![Open the live app](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://flight-price-prediction-444.streamlit.app/)
+[![Python](https://img.shields.io/badge/Python-Project-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/App-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Model](https://img.shields.io/badge/Model-XGBoost-189AB4)](https://xgboost.readthedocs.io/)
 
-**Live app:** [Flight Price Prediction Dashboard](https://flight-price-prediction-444.streamlit.app/)
+[![Animated flight route: explore routes, estimate fares, powered by XGBoost](https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=20&duration=2600&pause=900&color=38BDF8&center=true&vCenter=true&width=620&height=45&lines=Choose+a+route+%E2%9C%88%EF%B8%8F;Explore+your+fare+estimate+%F0%9F%93%8A;Powered+by+XGBoost+%F0%9F%A4%96)](https://flight-price-prediction-444.streamlit.app/)
 
-> **Prediction disclaimer:** Estimates are model outputs for exploration and should not be treated as live quotes or guaranteed fares. Prices change with availability, booking time, and other factors that are not represented in the model.
+**[Launch the live Flight Price Prediction Dashboard →](https://flight-price-prediction-444.streamlit.app/)**
 
-## Features
+</div>
 
-- Predicts an estimated fare from airline, route, ticket class, stops, duration, date, and time-of-day inputs.
-- Builds the verified 69-feature model input schema used to train the included model. When a model contains feature-name metadata, the app uses it directly.
-- Shows the generated feature vector alongside the prediction.
-- Includes an animated route visualization. Its external map and animation assets require an internet connection; fare prediction itself does not.
+---
 
-## Repository layout
+> **Fare estimates, not live quotes.** This app predicts from historical training data. It does not fetch current airline prices, and estimates are not guaranteed fares. Actual prices vary with availability, booking time, and other market conditions.
+
+## 🛫 What you can do
+
+- Estimate a domestic flight fare from airline, origin, destination, class, stops, duration, date, and time-of-day.
+- Inspect the 69-feature input sent to the trained XGBoost model.
+- Follow an animated route visualization between the selected cities. The visualization loads external assets; prediction works independently.
+- Try the [live Streamlit app](https://flight-price-prediction-444.streamlit.app/).
+
+## 📊 Training dataset
+
+The flight-price notebooks explore the `Clean_Dataset.csv` flight-fare data and engineer features for the prediction task. The final production-training cell uses the prepared **`Freshly_cleaned.csv`** dataset.
+
+The cleaned training file contains **300,257 rows** before exact duplicate feature/price rows are removed; the published model was refit on **299,995 rows** and **69 encoded features**. The data includes airline, origin and destination, fare, class, journey day and month, flight number, duration, stop category, and departure/arrival time information. Flight number is used to group validation and test splits to reduce leakage, then excluded as an identifier from model features.
+
+**The CSV files are not included in this repository.** You do not need the dataset to run the dashboard—the included model artifact is sufficient. To retrain, obtain the dataset from a source you are authorized to use and place `Freshly_cleaned.csv` in the project root or a `data/` folder. The notebook also contains exploratory cells that may need their input paths updated. Do not publish datasets unless you have permission to redistribute them.
+
+## 📈 Model evaluation
+
+The training notebook compares Random Forest and XGBoost using validation mean absolute error (MAE), evaluates the selected model on untouched flight-number groups, and then refits it on the available cleaned data. XGBoost was selected for the current artifact.
+
+| Held-out test metric | Result |
+| --- | ---: |
+| Mean absolute error (MAE) | INR 2,553.91 |
+| R² | 0.9509 |
+
+These results describe one evaluation split from this dataset; they do not guarantee accuracy for future or live fares. A realistic prediction is not proof of correctness—compare against a real quote for the same itinerary to evaluate an individual estimate.
+
+## 🗺️ Project map
 
 ```text
 .
 ├── app/
-│   └── app.py
+│   └── app.py                                  # Streamlit interface and prediction flow
 ├── EDA/
 │   ├── EDA And Feature Engineering Flight Price Dataset.ipynb
-│   └── EDA.IPYNB
-├── final_flight_price_rf_model.pkl
-├── flight_price_rf_model.pkl
+│   └── EDA.IPYNB                              # Separate red-wine exploration
+├── final_flight_price_rf_model.pkl             # Included XGBoost artifact
 ├── requirements.txt
 └── README.md
 ```
 
-- `app/app.py` is the Streamlit application.
-- `final_flight_price_rf_model.pkl` is the XGBoost model artifact included in the repository (the filename is retained from the training notebook). The 1.05 GB `flight_price_rf_model.pkl` artifact is intentionally excluded from GitHub because GitHub rejects regular Git files over 100 MB. The app checks `MODEL_PATH` first, then `flight_price_rf_model.pkl`, `final_flight_price_rf_model.pkl`, and a repository-relative EDA path. Supply the larger artifact separately if you specifically need it.
-- `EDA/EDA And Feature Engineering Flight Price Dataset.ipynb` explores and engineers features from `Clean_Dataset.csv`. The CSV is not included and must be supplied separately.
-- `EDA/EDA.IPYNB` is a separate red-wine EDA notebook. It reads the red-wine dataset directly from the UCI URL, so running that cell requires internet access.
+The model filename retains “rf” from an earlier training workflow; the included artifact is **XGBoost**, not Random Forest. The former 1.05 GB `flight_price_rf_model.pkl` artifact is intentionally not included in the repository because it exceeds GitHub's regular-file size limit.
 
-## Requirements
+## ⚡ Run it locally
 
-- Python with a version supported by the installed NumPy, pandas, scikit-learn, Streamlit, and notebook packages.
-- `requirements.txt` installs the packages used by the dashboard and notebooks.
-- A compatible model pickle is required to make predictions. The included `final_flight_price_rf_model.pkl` is the default available artifact in a fresh checkout. Serialized XGBoost models are not guaranteed to work across library versions; use the same XGBoost and Python versions used to train the artifact.
+### 1. Install dependencies
 
-The dependency constraints in `requirements.txt` are minimum versions, not a lockfile. For repeatable deployments, resolve and lock the exact package versions tested with the model artifacts.
-
-## Model validation
-
-The included model was retrained using `Freshly_cleaned.csv`. The notebook removes the identifier columns, drops exact duplicate feature/price rows, and uses a flight-number-grouped validation and test split to reduce leakage between the same flights. It compares Random Forest and XGBoost using fare MAE, then evaluates the selected model once on the untouched test groups before refitting it on all available rows.
-
-For the current local dataset, XGBoost was selected. On the untouched grouped test set it achieved **INR 2,553.91 MAE** and **R² 0.9509**. These are dataset-specific evaluation results, not a guarantee for future fares. The notebook checks that all 69 encoded features and their order match the Streamlit application before it saves the model.
-
-## Local setup
-
-Run these commands from the repository root:
+From the project root in PowerShell:
 
 ```powershell
 py -m venv .venv
@@ -60,44 +74,55 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-If PowerShell blocks activation, either enable the appropriate local script policy for your environment or invoke the virtual-environment Python directly:
+If environment activation is blocked, run pip using the virtual environment directly:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## Run the dashboard
-
-From the repository root:
+### 2. Start the dashboard
 
 ```powershell
 streamlit run app/app.py
 ```
 
-To select a model explicitly, set `MODEL_PATH` to the absolute path of a trusted model artifact before starting Streamlit:
+The app uses `final_flight_price_rf_model.pkl` by default. To select a different trusted artifact, set `MODEL_PATH` first:
 
 ```powershell
-$env:MODEL_PATH = "F:\plane\final_flight_price_rf_model.pkl"
+$env:MODEL_PATH = "C:\path\to\model.pkl"
 streamlit run app/app.py
 ```
 
-The application also checks the current working directory for `flight_price_rf_model.pkl` and `final_flight_price_rf_model.pkl`. Start it from the repository root so those fallback paths resolve as expected.
+The app checks the configured model path and supported repository-relative fallback locations. Run Streamlit from the project root so relative paths resolve as expected.
 
-## Run the notebooks
+## 🧪 Train or explore
 
-Install the requirements, open the desired notebook in Jupyter or VS Code, and select the Python environment where the requirements were installed. The final production-training cell requires the cleaned `Freshly_cleaned.csv` dataset and searches project `data/` folders and the original local Downloads path; update its candidate paths if your CSV is stored elsewhere. Earlier exploratory cells may also contain machine-specific paths. Do not commit private or licensed datasets unless you have permission to distribute them.
+Open the desired notebook in Jupyter or VS Code using the environment where the requirements are installed. For production retraining, supply `Freshly_cleaned.csv` in the project root or `data/` directory; update the notebook's candidate paths if the file is elsewhere. Some earlier exploratory cells may still refer to local paths or `Clean_Dataset.csv`.
 
-## Model and data handling
+`EDA/EDA.IPYNB` is a separate red-wine EDA notebook and fetches its dataset from UCI, so that notebook requires internet access.
 
-- Only load pickle/joblib files from trusted sources. Deserializing an untrusted model file can execute arbitrary code.
-- Keep large datasets and model artifacts out of source control unless repository policy explicitly allows them. The oversized `flight_price_rf_model.pkl` is ignored by Git; distribute it through an approved artifact store if needed.
-- Record the model training code, source data provenance, and exact dependency versions when publishing or deploying a new model.
-- Verify that a replacement artifact has the feature metadata expected by the app before deployment.
+## 🚀 Deployment notes
 
-## Troubleshooting
+- The model artifact is loaded with joblib. Only use pickle/joblib files from trusted sources; loading an untrusted artifact can execute code.
+- Keep large datasets and model files out of Git unless repository policy explicitly permits them. Use an approved artifact store for files that exceed GitHub's size limit.
+- Use compatible Python and XGBoost versions when loading the model. `requirements.txt` provides dependency constraints, not a fully locked environment.
+- The route animation uses external browser assets and needs internet access; fare prediction does not depend on those assets.
+- If you replace the model, verify that its feature count and schema match the app before deployment.
 
-- **Model disconnected:** confirm `MODEL_PATH` points to an existing, trusted `.pkl` artifact, or use the included `final_flight_price_rf_model.pkl` from the repository root.
-- **Model load or prediction error:** check Python and XGBoost compatibility against the model's training environment.
-- **Flight notebook cannot find data:** place `Clean_Dataset.csv` in a searched location and update any later machine-specific paths in the notebook.
-- **Wine notebook cannot fetch data:** check internet access to the UCI dataset URL.
-- **Route animation is blank:** check browser network access to the external visualization assets; the prediction feature is separate.
+## 🔧 Troubleshooting
+
+| Issue | What to check |
+| --- | --- |
+| Model is disconnected | Confirm the model file is present, trusted, and `MODEL_PATH` points to it if using a non-default location. |
+| Model load or prediction error | Check Python/XGBoost compatibility and ensure the artifact matches the app's 69-feature schema. |
+| Training notebook cannot find data | Place `Freshly_cleaned.csv` in the project root or `data/`, or update the notebook's candidate paths. |
+| Wine notebook cannot fetch data | Check internet access to the UCI dataset. |
+| Route animation is blank | Check browser access to external visualization assets; the fare prediction is separate. |
+
+---
+
+<div align="center">
+
+**Ready for take-off?** [Open the live fare estimator ✈️](https://flight-price-prediction-444.streamlit.app/)
+
+</div>
