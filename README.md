@@ -67,7 +67,7 @@ streamlit run app/app.py
 To select a model explicitly, set `MODEL_PATH` to the absolute path of a trusted model artifact before starting Streamlit:
 
 ```powershell
-$env:MODEL_PATH = "C:\path\to\flight_price_rf_model.pkl"
+$env:MODEL_PATH = "F:\plane\final_flight_price_rf_model.pkl"
 streamlit run app/app.py
 ```
 
