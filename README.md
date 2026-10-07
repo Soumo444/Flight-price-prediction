@@ -2,6 +2,10 @@
 
 A Streamlit dashboard that estimates an Indian domestic flight fare from itinerary details using a pre-trained XGBoost model. The repository also contains notebooks for flight-price feature engineering and an independent red-wine exploratory data analysis.
 
+[![Open the live app](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://flight-price-prediction-444.streamlit.app/)
+
+**Live app:** [Flight Price Prediction Dashboard](https://flight-price-prediction-444.streamlit.app/)
+
 > **Prediction disclaimer:** Estimates are model outputs for exploration and should not be treated as live quotes or guaranteed fares. Prices change with availability, booking time, and other factors that are not represented in the model.
 
 ## Features
