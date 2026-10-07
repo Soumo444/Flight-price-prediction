@@ -53,7 +53,6 @@ These results describe one evaluation split from this dataset; they do not guara
 │   └── app.py                                  # Streamlit interface and prediction flow
 ├── EDA/
 │   ├── EDA And Feature Engineering Flight Price Dataset.ipynb
-│   └── EDA.IPYNB                              # Separate red-wine exploration
 ├── data/
 │   └── Clean_Dataset.csv                      # Included flight-fare dataset for EDA
 ├── final_flight_price_rf_model.pkl             # Included XGBoost artifact
@@ -101,8 +100,6 @@ The app checks the configured model path and supported repository-relative fallb
 
 Open the desired notebook in Jupyter or VS Code using the environment where the requirements are installed. The included `data/Clean_Dataset.csv` is used by the notebook's initial exploratory section. For production retraining of the published model workflow, also supply `Freshly_cleaned.csv` in the project root or `data/` directory; some later exploratory cells may still refer to local paths.
 
-`EDA/EDA.IPYNB` is a separate red-wine EDA notebook and fetches its dataset from UCI, so that notebook requires internet access.
-
 ## 🚀 Deployment notes
 
 - The model artifact is loaded with joblib. Only use pickle/joblib files from trusted sources; loading an untrusted artifact can execute code.
@@ -119,7 +116,6 @@ Open the desired notebook in Jupyter or VS Code using the environment where the 
 | Model load or prediction error | Check Python/XGBoost compatibility and ensure the artifact matches the app's 69-feature schema. |
 | Exploratory notebook cannot find data | Confirm `data/Clean_Dataset.csv` exists in the project checkout; the notebook searches the project data folder from common working directories. |
 | Final training cell cannot find data | Provide `Freshly_cleaned.csv` in the project root or `data/`, or update the training cell's candidate paths. |
-| Wine notebook cannot fetch data | Check internet access to the UCI dataset. |
 | Route animation is blank | Check browser access to external visualization assets; the fare prediction is separate. |
 
 ---
