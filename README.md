@@ -39,6 +39,12 @@ A Streamlit dashboard that estimates an Indian domestic flight fare from itinera
 
 The dependency constraints in `requirements.txt` are minimum versions, not a lockfile. For repeatable deployments, resolve and lock the exact package versions tested with the model artifacts.
 
+## Model validation
+
+The included model was retrained using `Freshly_cleaned.csv`. The notebook removes the identifier columns, drops exact duplicate feature/price rows, and uses a flight-number-grouped validation and test split to reduce leakage between the same flights. It compares Random Forest and XGBoost using fare MAE, then evaluates the selected model once on the untouched test groups before refitting it on all available rows.
+
+For the current local dataset, XGBoost was selected. On the untouched grouped test set it achieved **INR 2,553.91 MAE** and **R² 0.9509**. These are dataset-specific evaluation results, not a guarantee for future fares. The notebook checks that all 69 encoded features and their order match the Streamlit application before it saves the model.
+
 ## Local setup
 
 Run these commands from the repository root:
@@ -75,7 +81,7 @@ The application also checks the current working directory for `flight_price_rf_m
 
 ## Run the notebooks
 
-Install the requirements, open the desired notebook in Jupyter or VS Code, and select the Python environment where the requirements were installed. The flight-price notebook initially searches for `Clean_Dataset.csv` in several local locations, but later cells also contain machine-specific absolute paths; update those cells to your dataset location before running the notebook from top to bottom. Do not commit private or licensed datasets unless you have permission to distribute them.
+Install the requirements, open the desired notebook in Jupyter or VS Code, and select the Python environment where the requirements were installed. The final production-training cell requires the cleaned `Freshly_cleaned.csv` dataset and searches project `data/` folders and the original local Downloads path; update its candidate paths if your CSV is stored elsewhere. Earlier exploratory cells may also contain machine-specific paths. Do not commit private or licensed datasets unless you have permission to distribute them.
 
 ## Model and data handling
 
