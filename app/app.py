@@ -94,12 +94,53 @@ CITY_COORDS = {  # (longitude, latitude)
 COUNTRY_NAME = "India"
 COUNTRY_FLAG = "in"  # ISO code used for the flag image
 
+MODEL_FEATURE_NAMES: List[str] = [
+    "class", "day", "month", "dep_hour", "arr_hour", "airline_index",
+    "route_index", "duration_in_min", "stops", "arr_daytime", "dep_daytime",
+    "airline_AirAsia", "airline_GO FIRST", "airline_Indigo", "airline_SpiceJet",
+    "airline_StarAir", "airline_Trujet", "airline_Vistara",
+    "from_Chennai", "from_Delhi", "from_Hyderabad", "from_Kolkata", "from_Mumbai",
+    "to_Chennai", "to_Delhi", "to_Hyderabad", "to_Kolkata", "to_Mumbai",
+    "class_category_Economy",
+    "route_Bangalore-Delhi", "route_Bangalore-Hyderabad", "route_Bangalore-Kolkata",
+    "route_Bangalore-Mumbai", "route_Chennai-Bangalore", "route_Chennai-Delhi",
+    "route_Chennai-Hyderabad", "route_Chennai-Kolkata", "route_Chennai-Mumbai",
+    "route_Delhi-Bangalore", "route_Delhi-Chennai", "route_Delhi-Hyderabad",
+    "route_Delhi-Kolkata", "route_Delhi-Mumbai", "route_Hyderabad-Bangalore",
+    "route_Hyderabad-Chennai", "route_Hyderabad-Delhi", "route_Hyderabad-Kolkata",
+    "route_Hyderabad-Mumbai", "route_Kolkata-Bangalore", "route_Kolkata-Chennai",
+    "route_Kolkata-Delhi", "route_Kolkata-Hyderabad", "route_Kolkata-Mumbai",
+    "route_Mumbai-Bangalore", "route_Mumbai-Chennai", "route_Mumbai-Delhi",
+    "route_Mumbai-Hyderabad", "route_Mumbai-Kolkata",
+    "dep_period_Early_morning", "dep_period_Morning", "dep_period_Night",
+    "arr_period_Early_morning", "arr_period_Morning", "arr_period_Night",
+    "stops_category_Multiple-Stops", "stops_category_Non-stop",
+    "arr_daytime_category_Night Arrival", "dep_daytime_category_Night Departure",
+    "month_category_March",
+]
+
 # ==============================================================================
 # 3. HELPER FUNCTIONS & MODEL LOADER
 # ==============================================================================
+def get_model_feature_names(model) -> List[str]:
+    """Return model feature names, using the verified schema for the shipped artifact."""
+    feature_names = getattr(model, "feature_names_in_", None)
+    if feature_names is not None:
+        return list(feature_names)
+
+    feature_count = getattr(model, "n_features_in_", None)
+    if feature_count == len(MODEL_FEATURE_NAMES):
+        return MODEL_FEATURE_NAMES
+
+    raise ValueError(
+        "Model has no feature-name metadata and does not match the supported "
+        f"{len(MODEL_FEATURE_NAMES)}-feature schema (reported feature count: {feature_count})."
+    )
+
+
 @st.cache_resource(show_spinner="Loading predictive machine learning model...")
 def load_trained_model(path: Path):
-    """Loads and caches the trained Random Forest model with fallback checks and feature attribute patching."""
+    """Load and validate the trained fare prediction model."""
     search_paths = [
         path,
         Path("final_flight_price_rf_model.pkl"),
@@ -118,27 +159,12 @@ def load_trained_model(path: Path):
                 st.error(f"Error reading model binary at {p}: {e}")
                 return None
 
-    if loaded_model is not None and not hasattr(loaded_model, "feature_names_in_"):
-        # Fallback patch if feature_names_in_ is missing from older scikit-learn saves
-        loaded_model.feature_names_in_ = [
-            "class", "day", "month", "dep_hour", "arr_hour", "airline_index",
-            "route_index", "duration_in_min", "stops", "dep_daytime", "arr_daytime",
-            "airline_Air_India", "airline_AirAsia", "airline_GO FIRST", "airline_Indigo",
-            "airline_SpiceJet", "airline_StarAir", "airline_Trujet", "airline_Vistara",
-            "from_Bangalore", "from_Chennai", "from_Delhi", "from_Hyderabad", "from_Kolkata", "from_Mumbai",
-            "to_Bangalore", "to_Chennai", "to_Delhi", "to_Hyderabad", "to_Kolkata", "to_Mumbai",
-            "route_Bangalore-Chennai", "route_Bangalore-Delhi", "route_Bangalore-Hyderabad", "route_Bangalore-Kolkata", "route_Bangalore-Mumbai",
-            "route_Chennai-Bangalore", "route_Chennai-Delhi", "route_Chennai-Hyderabad", "route_Chennai-Kolkata", "route_Chennai-Mumbai",
-            "route_Delhi-Bangalore", "route_Delhi-Chennai", "route_Delhi-Hyderabad", "route_Delhi-Kolkata", "route_Delhi-Mumbai",
-            "route_Hyderabad-Bangalore", "route_Hyderabad-Chennai", "route_Hyderabad-Delhi", "route_Hyderabad-Kolkata", "route_Hyderabad-Mumbai",
-            "route_Kolkata-Bangalore", "route_Kolkata-Chennai", "route_Kolkata-Delhi", "route_Kolkata-Hyderabad", "route_Kolkata-Mumbai",
-            "route_Mumbai-Bangalore", "route_Mumbai-Chennai", "route_Mumbai-Delhi", "route_Mumbai-Hyderabad", "route_Mumbai-Kolkata",
-            "class_category_Economy", "stops_category_Non-stop", "stops_category_Multiple-Stops",
-            "arr_daytime_category_Night Arrival", "dep_daytime_category_Night Departure",
-            "month_category_March", "dep_period_Early_morning", "dep_period_Morning",
-            "dep_period_Evening", "dep_period_Night", "arr_period_Early_morning",
-            "arr_period_Morning", "arr_period_Evening", "arr_period_Night"
-        ]
+    if loaded_model is not None:
+        try:
+            get_model_feature_names(loaded_model)
+        except ValueError as error:
+            st.error(f"Loaded model is incompatible with this application: {error}")
+            return None
 
     return loaded_model
 
@@ -537,10 +563,8 @@ def build_model_input(
     departure_period: str,
     arrival_period: str,
 ) -> pd.DataFrame:
-    """Transforms user inputs into exact feature space expected by Random Forest model."""
-    feature_names = getattr(model, "feature_names_in_", None)
-    if feature_names is None:
-        raise ValueError("Loaded model object lacks 'feature_names_in_' metadata attribute.")
+    """Transform itinerary details into the model's expected feature space."""
+    feature_names = get_model_feature_names(model)
 
     values = dict.fromkeys(feature_names, 0.0)
     route = f"{source_city}-{destination_city}"
@@ -594,7 +618,7 @@ model = load_trained_model(MODEL_PATH)
 
 st.title("✈️ Flight Price Prediction Dashboard")
 st.markdown(
-    "Production-grade fare estimator driven by a tuned **Random Forest Regressor** ($R^2 \\approx 0.9884$)."
+    "Fare estimator driven by a trained **XGBoost Regressor**."
 )
 st.markdown("---")
 
@@ -602,7 +626,7 @@ with st.sidebar:
     st.header("⚙️ Model Status")
     if model is not None:
         st.success("✅ Model Loaded & Active")
-        st.info(f"Features Expectation: **{len(getattr(model, 'feature_names_in_', []))} attributes**")
+        st.info(f"Features Expectation: **{len(get_model_feature_names(model))} attributes**")
     else:
         st.error("❌ Model Disconnected")
         st.warning("Please verify `MODEL_PATH` or place `.pkl` in working directory.")
@@ -697,7 +721,7 @@ if st.button("Predict Flight Price 🚀", type="primary", use_container_width=Tr
                 <div class="metric-card">
                     <span style="color: #94a3b8; font-size: 0.95rem; font-weight: 500;">ESTIMATED FARE</span>
                     <div class="price-value">₹ {predicted_price:,.2f}</div>
-                    <span style="color: #64748b; font-size: 0.85rem;">Calculated via Random Forest Pipeline</span>
+                    <span style="color: #64748b; font-size: 0.85rem;">Calculated via XGBoost Regressor</span>
                 </div>
                 """,
                 unsafe_allow_html=True
