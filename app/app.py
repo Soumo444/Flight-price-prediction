@@ -46,7 +46,7 @@ st.markdown("""
 # ==============================================================================
 # 2. CONSTANTS & CONFIGURATIONS
 # ==============================================================================
-DEFAULT_MODEL_PATH = Path(r"D:\faeature eng\EDA\flight_price_rf_model.pkl")
+DEFAULT_MODEL_PATH = Path("final_flight_price_rf_model.pkl")
 MODEL_PATH = Path(os.getenv("MODEL_PATH", DEFAULT_MODEL_PATH))
 
 CITIES: List[str] = ["Bangalore", "Chennai", "Delhi", "Hyderabad", "Kolkata", "Mumbai"]
@@ -99,23 +99,48 @@ COUNTRY_FLAG = "in"  # ISO code used for the flag image
 # ==============================================================================
 @st.cache_resource(show_spinner="Loading predictive machine learning model...")
 def load_trained_model(path: Path):
-    """Loads and caches the trained Random Forest model with fallback checks."""
+    """Loads and caches the trained Random Forest model with fallback checks and feature attribute patching."""
     search_paths = [
         path,
-        Path("flight_price_rf_model.pkl"),
         Path("final_flight_price_rf_model.pkl"),
-        Path("../EDA/flight_price_rf_model.pkl")
+        Path("flight_price_rf_model.pkl"),
+        Path("../EDA/final_flight_price_rf_model.pkl"),
+        Path(r"D:\faeature eng\EDA\final_flight_price_rf_model.pkl")
     ]
 
+    loaded_model = None
     for p in search_paths:
         if p.is_file():
             try:
-                return joblib.load(p)
+                loaded_model = joblib.load(p)
+                break
             except Exception as e:
                 st.error(f"Error reading model binary at {p}: {e}")
                 return None
 
-    return None
+    if loaded_model is not None and not hasattr(loaded_model, "feature_names_in_"):
+        # Fallback patch if feature_names_in_ is missing from older scikit-learn saves
+        loaded_model.feature_names_in_ = [
+            "class", "day", "month", "dep_hour", "arr_hour", "airline_index",
+            "route_index", "duration_in_min", "stops", "dep_daytime", "arr_daytime",
+            "airline_Air_India", "airline_AirAsia", "airline_GO FIRST", "airline_Indigo",
+            "airline_SpiceJet", "airline_StarAir", "airline_Trujet", "airline_Vistara",
+            "from_Bangalore", "from_Chennai", "from_Delhi", "from_Hyderabad", "from_Kolkata", "from_Mumbai",
+            "to_Bangalore", "to_Chennai", "to_Delhi", "to_Hyderabad", "to_Kolkata", "to_Mumbai",
+            "route_Bangalore-Chennai", "route_Bangalore-Delhi", "route_Bangalore-Hyderabad", "route_Bangalore-Kolkata", "route_Bangalore-Mumbai",
+            "route_Chennai-Bangalore", "route_Chennai-Delhi", "route_Chennai-Hyderabad", "route_Chennai-Kolkata", "route_Chennai-Mumbai",
+            "route_Delhi-Bangalore", "route_Delhi-Chennai", "route_Delhi-Hyderabad", "route_Delhi-Kolkata", "route_Delhi-Mumbai",
+            "route_Hyderabad-Bangalore", "route_Hyderabad-Chennai", "route_Hyderabad-Delhi", "route_Hyderabad-Kolkata", "route_Hyderabad-Mumbai",
+            "route_Kolkata-Bangalore", "route_Kolkata-Chennai", "route_Kolkata-Delhi", "route_Kolkata-Hyderabad", "route_Kolkata-Mumbai",
+            "route_Mumbai-Bangalore", "route_Mumbai-Chennai", "route_Mumbai-Delhi", "route_Mumbai-Hyderabad", "route_Mumbai-Kolkata",
+            "class_category_Economy", "stops_category_Non-stop", "stops_category_Multiple-Stops",
+            "arr_daytime_category_Night Arrival", "dep_daytime_category_Night Departure",
+            "month_category_March", "dep_period_Early_morning", "dep_period_Morning",
+            "dep_period_Evening", "dep_period_Night", "arr_period_Early_morning",
+            "arr_period_Morning", "arr_period_Evening", "arr_period_Night"
+        ]
+
+    return loaded_model
 
 
 ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
@@ -178,7 +203,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
   const SRC = __SRC__, DST = __DST__;
   const FLAG = "__FLAG__", COUNTRY = "__COUNTRY__";
 
-  // ---------- helpers ----------
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
   const lerp = (a, b, t) => a + (b - a) * t;
   const easeIO = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -188,7 +212,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     return new THREE.Vector3(Math.cos(la) * Math.cos(lo), Math.sin(la), -Math.cos(la) * Math.sin(lo));
   }
 
-  // ---------- renderer / scene ----------
   const stage = document.getElementById("stage");
   const ui = document.getElementById("ui");
   let W = stage.clientWidth || 900;
@@ -209,12 +232,10 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
   camera.add(sun);
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-  // globe
   const globeMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 6, specular: new THREE.Color(0x111827) });
   const globe = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 96), globeMat);
   scene.add(globe);
 
-  // atmosphere glow
   const atmo = new THREE.Mesh(
     new THREE.SphereGeometry(1.13, 64, 64),
     new THREE.ShaderMaterial({
@@ -225,7 +246,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
   );
   scene.add(atmo);
 
-  // stars
   (function () {
     const p = [];
     for (let i = 0; i < 1600; i++) {
@@ -237,7 +257,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.14, transparent: true, opacity: 0.75, depthWrite: false })));
   })();
 
-  // ---------- route ----------
   const A = ll2v(SRC.lat, SRC.lon), B = ll2v(DST.lat, DST.lon);
   const omega = Math.max(Math.acos(clamp(A.dot(B), -1, 1)), 0.01);
   const distKm = Math.round(omega * 6371);
@@ -273,7 +292,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     glow.geometry.setDrawRange(0, n);
   }
 
-  // plane
   function makePlaneTexture() {
     const c = document.createElement("canvas");
     c.width = c.height = 256;
@@ -295,7 +313,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
   plane.renderOrder = 20;
   scene.add(plane);
 
-  // ---------- pins / UI ----------
   function makePin(info, showFlag) {
     const el = document.createElement("div");
     el.className = "pin";
@@ -320,7 +337,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     return { x: (p.x * .5 + .5) * W, y: (-p.y * .5 + .5) * H };
   }
 
-  // ---------- timeline ----------
   const T_INTRO = 2.4, T_FLIGHT = 5.6, T_ARRIVE = 3.0, T_TOTAL = T_INTRO + T_FLIGHT + T_ARRIVE;
   const LEAD = 0.035;
   const dFollow = 1 + clamp(0.22 + omega * 0.8, 0.3, 0.9);
@@ -368,7 +384,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     placeCamera();
     setProgress(f);
 
-    // plane
     const pp = curve.getPointAt(f);
     plane.position.copy(pp);
     const sz = 0.075 * camera.position.distanceTo(pp) * (H / 520);
@@ -384,7 +399,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     heading += diff * (1 - Math.exp(-dt * 10));
     plane.material.rotation = heading;
 
-    // pins
     [pinA, pinB].forEach(p => {
       const s = toScreen(p.pos);
       p.el.style.transform = "translate(" + s.x.toFixed(1) + "px," + s.y.toFixed(1) + "px)";
@@ -397,7 +411,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     pinB.el.classList.toggle("ringon", f > 0.55);
     pinB.el.classList.toggle("pulse", f >= 0.999);
 
-    // distance counter
     kmEl.textContent = "+" + Math.round(distKm * f).toLocaleString("en-US") + " km";
     kmEl.classList.toggle("on", t > T_INTRO - 0.2);
   }
@@ -436,7 +449,6 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
     if (ready && !running) { step(T_TOTAL, 0.016); renderer.render(scene, camera); }
   });
 
-  // ---------- textures ----------
   function loadTexture(urls) {
     return new Promise(res => {
       const loader = new THREE.TextureLoader();
@@ -469,7 +481,7 @@ ROUTE_ANIMATION_HTML = r"""<!-- __NONCE__ -->
         poly.forEach(ring => ring.forEach((q, i) => i ? g.lineTo(X(q[0]), Y(q[1])) : g.moveTo(X(q[0]), Y(q[1]))));
         g.fill("evenodd"); g.stroke();
       });
-    } catch (e) { /* plain ocean globe if offline */ }
+    } catch (e) { }
     return new THREE.CanvasTexture(c);
   }
 
@@ -533,7 +545,6 @@ def build_model_input(
     values = dict.fromkeys(feature_names, 0.0)
     route = f"{source_city}-{destination_city}"
 
-    # Core Numerical Features
     numeric_values = {
         "class": int(ticket_class == "Business"),
         "day": journey_day,
@@ -555,7 +566,6 @@ def build_model_input(
     if "arr_daytime" in values:
         values["arr_daytime"] = int(arrival_is_daytime)
 
-    # Categorical One-Hot Flags
     indicators = {
         f"airline_{airline}": 1,
         f"from_{source_city}": 1,
@@ -588,7 +598,6 @@ st.markdown(
 )
 st.markdown("---")
 
-# Sidebar - Application Context & Status
 with st.sidebar:
     st.header("⚙️ Model Status")
     if model is not None:
@@ -610,7 +619,6 @@ if model is None:
     st.error("Cannot proceed: Predictive model artifact is unreachable.")
     st.stop()
 
-# Inputs Form
 st.subheader("📋 Enter Itinerary Details")
 
 col_left, col_mid, col_right = st.columns(3, gap="medium")
@@ -660,7 +668,6 @@ with col_right:
 
 st.markdown("---")
 
-# Prediction Execution
 if st.button("Predict Flight Price 🚀", type="primary", use_container_width=True):
     try:
         input_vector = build_model_input(
@@ -680,7 +687,6 @@ if st.button("Predict Flight Price 🚀", type="primary", use_container_width=Tr
         log_prediction = float(model.predict(input_vector)[0])
         predicted_price = float(np.expm1(max(log_prediction, 0.0)))
 
-        # Display Results
         show_route_animation(source_city, destination_city)
 
         res_col1, res_col2 = st.columns([1.5, 1], gap="medium")
